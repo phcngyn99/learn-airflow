@@ -1,6 +1,9 @@
 from airflow import DAG
 from datetime import datetime
 from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.http.sensors.http import HttpSensor
+from airflow.providers.http.operators.http import SimpleHttpOperator
+import json
 
 with DAG (
     dag_id='user_processing',
@@ -24,4 +27,17 @@ with DAG (
         '''
     )
 
-    
+    is_api_available = HttpSensor(
+        task_id = 'is_api_available',
+        http_conn_id = 'user_api',
+        endpoint= 'api/'
+    )
+
+    extract_user = SimpleHttpOperator(
+        task_id = 'extract_user',
+        method= 'GET',
+        http_conn_id= 'user_api',
+        endpoint= 'api/',
+        response_filter= lambda response: json.loads(response.text),
+        log_response= True
+    )
