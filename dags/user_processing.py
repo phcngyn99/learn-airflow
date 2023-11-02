@@ -3,7 +3,25 @@ from datetime import datetime
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.http.sensors.http import HttpSensor
 from airflow.providers.http.operators.http import SimpleHttpOperator
+from airflow.operators.python import PythonOperator
 import json
+from pandas import json_normalize
+
+def _process_user(task_instance):
+    user = task_instance.xcom_pull(task_ids = 'extract_user')
+    user = user['result'][0]
+    processed_user = json_normalize(
+        {
+            'first_name' : user['name']['first'],
+            'last_name' : user['name']['last'],
+            'country' : user['location']['country'],
+            'username' : user['login']['username'],
+            'password' : user['login']['password'],
+            'email' : user['email']
+        }
+    )
+    processed_user.to_csv('/tmp/processed_user.csv',index= None, header= False)
+
 
 with DAG (
     dag_id='user_processing',
@@ -41,3 +59,10 @@ with DAG (
         response_filter= lambda response: json.loads(response.text),
         log_response= True
     )
+
+    process_user = PythonOperator(
+        task_id = 'process_user',
+        python_callable= _process_user,
+    )
+
+    extract_user >> process_user
