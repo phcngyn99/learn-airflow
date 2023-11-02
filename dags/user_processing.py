@@ -10,7 +10,7 @@ from pandas import json_normalize
 
 def _process_user(task_instance):
     user = task_instance.xcom_pull(task_ids = 'extract_user')
-    user = user['result'][0]
+    user = user['results'][0]
     processed_user = json_normalize(
         {
             'first_name' : user['name']['first'],
@@ -33,7 +33,7 @@ def _store_user():
 with DAG (
     dag_id='user_processing',
     start_date= datetime(2023,1,1),
-    schedule='@daily',
+    schedule= None,
     catchup=False
 ) as dag:
     
