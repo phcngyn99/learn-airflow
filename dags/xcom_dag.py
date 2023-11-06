@@ -1,17 +1,18 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator, BranchPythonOperator
 from airflow.operators.bash import BashOperator
  
 from datetime import datetime
  
-def _t1():
-    None
+def _t1(ti):
+    ti.xcom_push(key = 'mkey', value = 2002)
  
-def _t2():
-    None
+def _t2(ti):
+    holder = ti.xcom_pull(key = 'mkey', task_ids = 't1')
+    print(f"THIS IS A FUCKING XCOM TEST: {holder}")
  
-with DAG("xcom_dag", start_date=datetime(2022, 1, 1), 
-    schedule_interval='@daily', catchup=False) as dag:
+with DAG("xcom_dag", start_date=datetime(2023, 1, 1), 
+    schedule_interval=None, catchup=False) as dag:
  
     t1 = PythonOperator(
         task_id='t1',
