@@ -10,7 +10,13 @@ def _t1(ti):
 def _t2(ti):
     holder = ti.xcom_pull(key = 'mkey', task_ids = 't1')
     print(f"THIS IS A FUCKING XCOM TEST: {holder}")
- 
+
+def _branch(ti):
+    holder = ti.xcom_pull(key = 'mkey', task_ids = 't1')
+    if holder == 2002:
+        return 't2'
+    return 't3'
+
 with DAG("xcom_dag", start_date=datetime(2023, 1, 1), 
     schedule_interval=None, catchup=False) as dag:
  
@@ -28,5 +34,16 @@ with DAG("xcom_dag", start_date=datetime(2023, 1, 1),
         task_id='t3',
         bash_command="echo ''"
     )
+
+    t4 = BashOperator(
+        task_id='t4',
+        bash_command="echo ''",
+        trigger_rule = 'none_failed_min_one_success'
+    )
+
+    branch = BranchPythonOperator(
+        task_id = 'branch',
+        python_callable= _branch
+    )
  
-    t1 >> t2 >> t3
+    t1 >> branch >> [t2,t3] >> t4
