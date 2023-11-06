@@ -18,17 +18,18 @@ with DAG('parallel_dag', start_date=datetime(2023, 1, 1),
  
     load_a = BashOperator(
         task_id='load_a',
-        bash_command='sleep 1'
+        bash_command='sleep 5'
     )
  
     load_b = BashOperator(
         task_id='load_b',
-        bash_command='sleep 1'
+        bash_command='sleep 5'
     )
  
     transform = BashOperator(
         task_id='transform',
-        bash_command='sleep 1'
+        bash_command='sleep 10',
+        queue = 'high_cpu'
     )
  
     extract_a >> load_a
